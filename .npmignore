@@ -4,5 +4,5 @@ example
 src
 dist/**/*.test.*
 *.config.js
-tsconfig.js
+tsconfig.json
 *.tgz
