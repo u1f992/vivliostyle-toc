@@ -1,0 +1,8 @@
+.github
+.vscode
+example
+src
+dist/**/*.test.*
+*.config.js
+tsconfig.js
+*.tgz
