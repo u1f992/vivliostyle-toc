@@ -1,0 +1,33 @@
+{
+  "name": "@u1f992/vivliostyle-toc",
+  "version": "0.0.0",
+  "description": "unified plugin that integrates automatic tables of contents generation into Vivliostyle CLI workflows.",
+  "main": "dist/index.js",
+  "scripts": {
+    "lint": "eslint --fix \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "build": "tsc",
+    "example": "cd example && npx vivliostyle preview"
+  },
+  "keywords": [],
+  "author": "Koutaro Mukai",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "@types/hast": "^2.0.0",
+    "@types/node": "^24.5.1",
+    "eslint": "^9.35.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0",
+    "unified": "^9.0.0"
+  },
+  "dependencies": {
+    "hast-util-from-html": "^1.0.2",
+    "hast-util-get-attribute": "^1.0.0",
+    "hast-util-get-xpath": "^1.0.0",
+    "hast-util-select": "^5.0.5",
+    "upath": "^2.0.1"
+  }
+}

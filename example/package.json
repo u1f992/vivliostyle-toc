@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@u1f992/vivliostyle-toc": "file:..",
+    "@vivliostyle/cli": "^9.6.0"
+  }
+}

@@ -1,0 +1,105 @@
+@page {
+  size: 148mm 210mm;
+}
+
+section.level5 {
+  padding: 1em;
+  background-color: lightblue;
+}
+h5 {
+  margin-top: 0;
+}
+
+a {
+  text-decoration: none;
+  color: black;
+}
+
+#toc li {
+  list-style: none;
+}
+#toc li > a::after {
+  content: leader(dotted) " " target-counter(attr(href url), page);
+  margin-left: 0.5em;
+}
+
+#toc > ol > li:first-child {
+  margin-bottom: 1lh;
+}
+#toc > ol > li:last-child {
+  margin-top: 1lh;
+}
+
+#toc > ol {
+  counter-reset: chapter 0;
+  padding-left: 0;
+}
+#toc > ol > li {
+  margin-inline-start: 3em;
+  position: relative;
+}
+#toc > ol > li > a::before {
+  counter-increment: chapter;
+  content: "第" counter(chapter) "章";
+
+  position: absolute;
+  inset-inline-start: -3em;
+  inline-size: 3em;
+  text-align: start;
+}
+#toc > ol > li:first-child,
+#toc > ol > li:last-child {
+  margin-inline-start: 0;
+}
+#toc > ol > li:first-child > a::before,
+#toc > ol > li:last-child > a::before {
+  counter-increment: none;
+  content: none;
+}
+
+#toc > ol > li > ol {
+  counter-reset: section 0;
+  padding-left: 0;
+  margin-left: -2em;
+}
+#toc > ol > li > ol > li {
+  margin-inline-start: 2em;
+  position: relative;
+}
+#toc > ol > li > ol > li > a::before {
+  counter-increment: section;
+  content: counter(chapter) "." counter(section);
+
+  position: absolute;
+  inset-inline-start: -2em;
+  inline-size: 2em;
+  text-align: start;
+}
+
+#toc > ol > li > ol > li > ol {
+  counter-reset: subsection 0;
+  padding-left: 0;
+  margin-left: -1em;
+}
+#toc > ol > li > ol > li > ol > li {
+  margin-inline-start: 3em;
+  position: relative;
+}
+#toc > ol > li > ol > li > ol > li > a::before {
+  counter-increment: subsection;
+  content: counter(chapter) "." counter(section) "." counter(subsection);
+
+  position: absolute;
+  inset-inline-start: -3em;
+  inline-size: 3em;
+  text-align: start;
+}
+#toc .toc-level5 {
+  margin-inline-start: -0.5em;
+}
+#toc .toc-level5 > a::before {
+  counter-increment: none;
+  content: "［COLUMN］";
+  display: inline;
+  position: initial;
+}
