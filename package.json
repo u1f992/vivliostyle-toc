@@ -1,6 +1,6 @@
 {
   "name": "@u1f992/vivliostyle-toc",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "unified plugin that integrates automatic tables of contents generation into Vivliostyle CLI workflows.",
   "main": "dist/index.js",
   "scripts": {
