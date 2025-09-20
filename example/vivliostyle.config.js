@@ -36,6 +36,8 @@ const vivliostyleConfig = {
       //   .toc-level5
       //   .toc-level3
       // ...
+      // eslint-disable-next-line no-undef
+      log: console.debug,
     }),
 };
 

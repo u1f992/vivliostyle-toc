@@ -149,6 +149,7 @@ export type Config = {
     [toc: string]: readonly (string | Entry)[];
   }>;
   overrideDepth?: (level: number, elem: HastHeadingElement) => number;
+  log?: (msg: string) => void;
 };
 
 export const toc: unified.Plugin<[Readonly<Config>]> = ({
@@ -158,7 +159,9 @@ export const toc: unified.Plugin<[Readonly<Config>]> = ({
   entryContext,
   tocEntryMap,
   overrideDepth,
+  log,
 }) => {
+  log ??= () => {};
   ignoreAttr ??= "data-toc-ignore";
   const ctx = upath.resolve(process.cwd(), entryContext ?? ".");
   const normalizedTocEntryMap = new Map(
@@ -192,8 +195,8 @@ export const toc: unified.Plugin<[Readonly<Config>]> = ({
 
     const rawPath = file.path;
     if (typeof rawPath === "undefined") {
-      console.warn(
-        "cannot extract headings from anonymous files or expand table of contents into anonymous files.",
+      log(
+        "[vivliostyle-toc] cannot extract headings from anonymous files or expand table of contents into anonymous files.",
       );
       return;
     }
@@ -208,7 +211,12 @@ export const toc: unified.Plugin<[Readonly<Config>]> = ({
         .filter(
           ({ tocPath, ignoreUpdate }) => tocPath !== filePath && !ignoreUpdate,
         )
-        .forEach(({ tocPath }) => touchSync(tocPath));
+        .forEach(({ tocPath }) => {
+          log(
+            `[vivliostyle-toc] ${upath.relative(ctx, filePath)} affects ${upath.relative(ctx, tocPath)}`,
+          );
+          touchSync(tocPath);
+        });
     }
 
     const dependsOn = normalizedTocEntryMap.get(filePath);
