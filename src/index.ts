@@ -138,11 +138,15 @@ function buildToC(
   }
 }
 
+type Entry = { path: string; ignoreUpdate: boolean };
+
 export type Config = {
   selector: HeadingsSelector;
   ignoreAttr?: string;
   entryContext?: string;
-  tocEntryMap: Readonly<{ [index: string]: readonly string[] }>;
+  tocEntryMap: Readonly<{
+    [toc: string]: readonly (string | Entry)[];
+  }>;
   overrideDepth?: (level: number, elem: HastHeadingElement) => number;
 };
 
@@ -154,21 +158,31 @@ export const toc: unified.Plugin<[Readonly<Config>]> = function (
 ) {
   ignoreAttr ??= "data-toc-ignore";
   const ctx = upath.resolve(process.cwd(), entryContext ?? ".");
-  tocEntryMap = Object.fromEntries(
-    Object.entries(tocEntryMap).map(([index, entries]) => [
-      upath.resolve(ctx, index),
-      entries.map((entry) => upath.resolve(ctx, entry)),
+  const normalizedTocEntryMap = new Map(
+    Object.entries(tocEntryMap).map(([toc, entries]) => [
+      upath.resolve(ctx, toc),
+      entries.map((ent) =>
+        typeof ent === "string"
+          ? { entryPath: upath.resolve(ctx, ent), ignoreUpdate: false }
+          : {
+              entryPath: upath.resolve(ctx, ent.path),
+              ignoreUpdate: ent.ignoreUpdate,
+            },
+      ),
     ]),
   );
-  const entryToCMap = Object.entries(tocEntryMap).reduce(
-    (acc, [index, entries]) => {
-      entries.forEach((entry) => (acc[entry] ??= []).push(index));
-      return acc;
+  const entryToCMap = normalizedTocEntryMap.entries().reduce(
+    (map, [tocPath, entries]) => {
+      entries.forEach(({ entryPath, ignoreUpdate }) => {
+        if (!map.has(entryPath)) {
+          map.set(entryPath, []);
+        }
+        map.get(entryPath)!.push({ tocPath, ignoreUpdate });
+      });
+      return map;
     },
-    {} as { [entry: string]: string[] },
+    new Map() as Map<string, { tocPath: string; ignoreUpdate: boolean }[]>,
   );
-  const tocPaths = new Set(Object.keys(tocEntryMap));
-  const entryPaths = new Set(Object.keys(entryToCMap));
 
   return (tree, file) => {
     if (this.data()[recursiveFlag]) {
@@ -185,19 +199,20 @@ export const toc: unified.Plugin<[Readonly<Config>]> = function (
     }
     const filePath = upath.resolve(rawPath);
 
-    if (entryPaths.has(filePath)) {
+    const affects = entryToCMap.get(filePath);
+    if (affects) {
       ensureId(root, selector, ignoreAttr);
 
       // trigger hot reload
-      entryToCMap[filePath]!.filter((path) => path !== filePath).forEach(
-        (path) => {
-          touchSync(path);
-          // console.debug(`[debug] touch ${path} while processing ${filePath}`);
-        },
-      );
+      affects
+        .filter(
+          ({ tocPath, ignoreUpdate }) => tocPath !== filePath && !ignoreUpdate,
+        )
+        .forEach(({ tocPath }) => touchSync(tocPath));
     }
 
-    if (tocPaths.has(filePath)) {
+    const dependsOn = normalizedTocEntryMap.get(filePath);
+    if (dependsOn) {
       const toc = select("#toc", root);
       if (toc) {
         const baseDir = upath.dirname(filePath);
@@ -210,34 +225,35 @@ export const toc: unified.Plugin<[Readonly<Config>]> = function (
         };
         toc.children = [tocRoot];
 
-        tocEntryMap[filePath]!.map((path) => ({
-          path,
-          content: fs.readFileSync(path, {
-            encoding: "utf-8",
-          }),
-        }))
-          .map(({ path, content }) => {
+        dependsOn
+          .map(({ entryPath }) => ({
+            entryPath,
+            contents: fs.readFileSync(entryPath, {
+              encoding: "utf-8",
+            }),
+          }))
+          .map(({ entryPath, contents }) => {
             let file;
             this.data()[recursiveFlag] = {};
             try {
               file = this.processSync({
-                contents: content,
-                path: path,
+                contents,
+                path: entryPath,
               });
             } finally {
               delete this.data()[recursiveFlag];
             }
-            return { path, root: fromHtml(file.toString()) };
+            return { entryPath, root: fromHtml(file.toString()) };
           })
-          .forEach(({ path, root }) =>
+          .forEach(({ entryPath, root }) =>
             buildToC(
               tocRoot,
               root,
               selector,
               ignoreAttr,
-              filePath === path
+              filePath === entryPath
                 ? null
-                : upath.relative(baseDir, upath.changeExt(path, ".html")),
+                : upath.relative(baseDir, upath.changeExt(entryPath, ".html")),
               overrideDepth,
             ),
           );
