@@ -12,6 +12,7 @@ const vivliostyleConfig = {
   entry: ["00.md", "toc.md", "01.md", "02.md", "99.md"],
   documentProcessor: (opt, meta) =>
     VFM(opt, meta).use(toc, {
+      entryProcessor: VFM(opt, meta),
       tocEntryMap: {
         "toc.md": ["00.md", "01.md", "02.md", "99.md"],
       },
