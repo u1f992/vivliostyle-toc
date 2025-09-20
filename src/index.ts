@@ -143,6 +143,7 @@ type Entry = { path: string; ignoreUpdate: boolean };
 export type Config = {
   selector: HeadingsSelector;
   ignoreAttr?: string;
+  entryProcessor: unified.Processor;
   entryContext?: string;
   tocEntryMap: Readonly<{
     [toc: string]: readonly (string | Entry)[];
@@ -150,12 +151,14 @@ export type Config = {
   overrideDepth?: (level: number, elem: HastHeadingElement) => number;
 };
 
-const recursiveFlag = "vivliostyleToC";
-
-export const toc: unified.Plugin<[Readonly<Config>]> = function (
-  this,
-  { selector, ignoreAttr, entryContext, tocEntryMap, overrideDepth },
-) {
+export const toc: unified.Plugin<[Readonly<Config>]> = ({
+  selector,
+  ignoreAttr,
+  entryProcessor,
+  entryContext,
+  tocEntryMap,
+  overrideDepth,
+}) => {
   ignoreAttr ??= "data-toc-ignore";
   const ctx = upath.resolve(process.cwd(), entryContext ?? ".");
   const normalizedTocEntryMap = new Map(
@@ -185,9 +188,6 @@ export const toc: unified.Plugin<[Readonly<Config>]> = function (
   );
 
   return (tree, file) => {
-    if (this.data()[recursiveFlag]) {
-      return;
-    }
     const root = tree as hast.Root;
 
     const rawPath = file.path;
@@ -232,19 +232,17 @@ export const toc: unified.Plugin<[Readonly<Config>]> = function (
               encoding: "utf-8",
             }),
           }))
-          .map(({ entryPath, contents }) => {
-            let file;
-            this.data()[recursiveFlag] = {};
-            try {
-              file = this.processSync({
-                contents,
-                path: entryPath,
-              });
-            } finally {
-              delete this.data()[recursiveFlag];
-            }
-            return { entryPath, root: fromHtml(file.toString()) };
-          })
+          .map(({ entryPath, contents }) => ({
+            entryPath,
+            root: fromHtml(
+              entryProcessor
+                .processSync({
+                  contents,
+                  path: entryPath,
+                })
+                .toString(),
+            ),
+          }))
           .forEach(({ entryPath, root }) =>
             buildToC(
               tocRoot,
